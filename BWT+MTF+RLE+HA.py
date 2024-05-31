@@ -84,40 +84,30 @@ def inverse_mtf(indices, text):
         alphabet.insert(0, char)  # Перемещаем символ в начало алфавита
     return ''.join(result)
 
-def encode_rle(index):
-    if not index:
-        return []
-    if len(index) == 1:
-        return [index[0]]
+def encode_rle(pixels):
     encoded = []
     i = 0
-    while i < len(index) - 1:
+    while i < len(pixels) - 1:
         count = 1
-        while i < len(index) - 1 and index[i] == index[i+1]:
+        while pixels[i] == pixels[i+1]:
             i += 1
             count += 1
         if count == 1:
-            encoded.append(index[i])
+            encoded.append((pixels[i]))
         else:
-            encoded.append((index[i], count))
+            encoded.append((pixels[i], count))
         i += 1
-    if i < len(index):
-        encoded.append((index[i], 1))
     return encoded
 
 def decode_rle(encoded):
     decoded = []
-    i = 0
-    while i < len(encoded):
-        if isinstance(encoded[i], int):
-            decoded.append(encoded[i])
-            i += 1
-        elif isinstance(encoded[i], tuple):
-            pixel = encoded[i][0]
-            count = encoded[i][1]
-            decoded.extend([pixel] * count)
-            i += 1
+    for pixel in encoded:
+        if isinstance(pixel, tuple) and len(pixel) == 2:
+            decoded.extend([pixel[0]] * pixel[1])
+        else:
+            decoded.append(pixel)
     return decoded
+
 
 def build_dictionary(text):
     # Сбор статистики частот символов
@@ -165,19 +155,19 @@ def compress_file_bwt_mtf_ha(file_path):
     with open(file_path, 'r') as file:
         string = file.read()
     transform = burrows_wheeler_transform(string)
-    compressed, huffman_dict = huffman_encode(encode_rle(mtf(transform)))
+    compressed, huffman_dict = huffman_encode(encode_rle(mtf(transform), len(transform)))
     with open(file_path.replace('.txt', '.bin'), 'wb') as file:
         compressed.tofile(file)
-    return huffman_dict, transform
+    return huffman_dict, transform, len(transform)
 
-def decompress_file_bwt_mtf_ha(file_path, huffman_dict, transform):
+def decompress_file_bwt_mtf_ha(file_path, huffman_dict, transform, n):
     with open(file_path, 'rb') as file:
         bit_array = bitarray.bitarray()
         bit_array.fromfile(file)
         compressed = ''.join(str(bit) for bit in bit_array)
-    decoded = inverse_burrows_wheeler_transform(inverse_mtf(decode_rle(huffman_decode(compressed, huffman_dict)), transform))
+    decoded = inverse_burrows_wheeler_transform(inverse_mtf(decode_rle(huffman_decode(compressed, huffman_dict), n), transform))
     with open(file_path.replace('.bin', '.decompressed'), 'w') as file:
         file.write(decoded)
 
-huffman_dict, transform = compress_file_bwt_mtf_ha('test.txt')
-decompress_file_bwt_mtf_ha('test.bin', huffman_dict, transform)
+huffman_dict, transform, n = compress_file_bwt_mtf_ha('test.txt')
+decompress_file_bwt_mtf_ha('test.bin', huffman_dict, transform, n)

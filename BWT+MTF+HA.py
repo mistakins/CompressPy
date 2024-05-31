@@ -84,31 +84,6 @@ def inverse_mtf(indices, text):
         alphabet.insert(0, char)  # Перемещаем символ в начало алфавита
     return ''.join(result)
 
-
-def encode_rle(pixels):
-    encoded = []
-    i = 0
-    while i < len(pixels) - 1:
-        count = 1
-        while pixels[i] == pixels[i+1]:
-            i += 1
-            count += 1
-        if count == 1:
-            encoded.append((pixels[i]))
-        else:
-            encoded.append((pixels[i], count))
-        i += 1
-    return encoded
-
-def decode_rle(encoded):
-    decoded = []
-    for pixel in encoded:
-        if isinstance(pixel, tuple) and len(pixel) == 2:
-            decoded.extend([pixel[0]] * pixel[1])
-        else:
-            decoded.append(pixel)
-    return decoded
-
 def build_dictionary(text):
     # Сбор статистики частот символов
     freq = {}
