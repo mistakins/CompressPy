@@ -63,7 +63,8 @@ def burrows_wheeler_transform(input_text):
     return bwt_arr
 
 def mtf(text):
-    alphabet = [chr(i) for i in range(256)]  # Создаем алфавит ASCII-символов
+    alphabet = list(set(text))
+    print(alphabet)  # Создаем алфавит ASCII-символов
     result = []
     for char in text:
         index = alphabet.index(char)  # Находим индекс символа в алфавите
@@ -72,8 +73,9 @@ def mtf(text):
         alphabet.insert(0, char)  # Перемещаем символ в начало алфавита
     return result
 
-def inverse_mtf(indices):
-    alphabet = [chr(i) for i in range(256)]  # Создаем алфавит ASCII-символов
+def inverse_mtf(indices, text):
+    alphabet = list(set(text))  # Создаем алфавит ASCII-символов
+    print(alphabet)
     result = []
     for index in indices:
         char = alphabet[index]  # Получаем символ по индексу из алфавита
@@ -152,19 +154,20 @@ def huffman_decode(compressed, huffman_dict):
 def compress_file_bwt_mtf_ha(file_path):
     with open(file_path, 'r') as file:
         string = file.read()
-    compressed, huffman_dict = huffman_encode(mtf(burrows_wheeler_transform(string)))
+    transformed = burrows_wheeler_transform(string)
+    compressed, huffman_dict = huffman_encode(mtf(transformed))
     with open(file_path.replace('.txt', '.bin'), 'wb') as file:
         compressed.tofile(file)
-    return huffman_dict
+    return huffman_dict, transformed
 
-def decompress_file_bwt_mtf_ha(file_path, huffman_dict):
+def decompress_file_bwt_mtf_ha(file_path, huffman_dict, string):
     with open(file_path, 'rb') as file:
         bit_array = bitarray.bitarray()
         bit_array.fromfile(file)
         compressed = ''.join(str(bit) for bit in bit_array)
-    decoded = inverse_burrows_wheeler_transform(inverse_mtf(huffman_decode(compressed, huffman_dict)))
+    decoded = inverse_burrows_wheeler_transform(inverse_mtf(huffman_decode(compressed, huffman_dict), string))
     with open(file_path.replace('.bin', '.decompressed'), 'w') as file:
         file.write(decoded)
 
-huffman_dict = compress_file_bwt_mtf_ha('test.txt')
-decompress_file_bwt_mtf_ha('test.bin', huffman_dict)
+huffman_dict, string = compress_file_bwt_mtf_ha('test.txt')
+decompress_file_bwt_mtf_ha('test.bin', huffman_dict, string)
